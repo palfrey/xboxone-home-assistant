@@ -512,7 +512,7 @@ class XboxOneDevice(MediaPlayerEntity):
         self._hass = hass
 
     def run_async(self, task):
-        return asyncio.run_coroutine_threadsafe(task, self._hass.loop).result()
+        return asyncio.run_coroutine_threadsafe(task, self._hass.loop).result(timeout=60)
 
     @property
     def name(self):
