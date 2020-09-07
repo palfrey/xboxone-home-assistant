@@ -9,6 +9,7 @@
     "@tuxuser"
   ],
   "requirements": [
-    "packaging>=20.3"
+    "packaging>=20.3",
+    "httpx"
   ]
 }
