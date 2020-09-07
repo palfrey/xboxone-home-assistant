@@ -501,7 +501,7 @@ class XboxOne:
 def run_async(task):
     try:
         loop = asyncio.get_running_loop()
-        return loop.run_until_complete(task)
+        return asyncio.run_coroutine_threadsafe(task, loop).result()
     except RuntimeError:
         return asyncio.run(task)
 
