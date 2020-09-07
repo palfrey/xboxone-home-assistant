@@ -181,7 +181,6 @@ class XboxOne:
             if len(app):
                 return app[0]
 
-    @property
     async def all_apps(self):
         apps = {
             'Home': 'ms-xbox-dashboard://home?view=home',
@@ -232,7 +231,7 @@ class XboxOne:
         await self.get('/device', params=params)
 
     async def _connect(self):
-        if self._auth and not self._check_authentication():
+        if self._auth and not await self._check_authentication():
             return False
         try:
             url = '/device/<liveid>/connect'
@@ -428,7 +427,7 @@ class XboxOne:
 
     async def launch_title(self, launch_uri):
         try:
-            apps = await self.all_apps
+            apps = await self.all_apps()
             if launch_uri in apps.keys():
                 launch_uri = apps[launch_uri]
             response = await self.get('/device/<liveid>/launch/{0}'.format(launch_uri)).json()
@@ -611,7 +610,7 @@ class XboxOneDevice(MediaPlayerEntity):
     @property
     def source_list(self):
         """Return a list of running apps."""
-        return list(self.run_async(self._xboxone.all_apps).keys())
+        return list(self.run_async(self._xboxone.all_apps()).keys())
 
     async def async_update(self):
         """Get the latest date and update device state."""
