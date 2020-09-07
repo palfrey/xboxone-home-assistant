@@ -10,6 +10,7 @@ CREDITS:
 """
 import logging
 import httpx
+import asyncio
 import voluptuous as vol
 from urllib.parse import urljoin
 from packaging import version
@@ -604,9 +605,9 @@ class XboxOneDevice(MediaPlayerEntity):
         return self._xboxone.active_app
 
     @property
-    async def source_list(self):
+    def source_list(self):
         """Return a list of running apps."""
-        return list(await self._xboxone.all_apps.keys())
+        return list(asyncio.run(self._xboxone.all_apps.keys()))
 
     async def async_update(self):
         """Get the latest date and update device state."""
@@ -614,53 +615,53 @@ class XboxOneDevice(MediaPlayerEntity):
 
     def turn_on(self):
         """Turn on the device."""
-        self._xboxone.poweron()
+        asyncio.run(self._xboxone.poweron())
 
     def turn_off(self):
         """Turn off the device."""
-        self._xboxone.poweroff()
+        asyncio.run(self._xboxone.poweroff())
 
-    async def mute_volume(self, mute):
+    def mute_volume(self, mute):
         """Mute the volume."""
-        await self._xboxone.volume_command('mute')
+        asyncio.run(self._xboxone.volume_command('mute'))
 
-    async def volume_up(self):
+    def volume_up(self):
         """Turn volume up for media player."""
-        await self._xboxone.volume_command('up')
+        asyncio.run(self._xboxone.volume_command('up'))
 
-    async def volume_down(self):
+    def volume_down(self):
         """Turn volume down for media player."""
-        await self._xboxone.volume_command('down')
+        asyncio.run(self._xboxone.volume_command('down'))
 
-    async def media_play(self):
+    def media_play(self):
         """Send play command."""
-        await self._xboxone.media_command('play')
+        asyncio.run(self._xboxone.media_command('play'))
 
-    async def media_pause(self):
+    def media_pause(self):
         """Send pause command."""
-        await self._xboxone.media_command('pause')
+        asyncio.run(self._xboxone.media_command('pause'))
 
-    async def media_stop(self):
-        await self._xboxone.media_command('stop')
+    def media_stop(self):
+        asyncio.run(self._xboxone.media_command('stop'))
 
-    async def media_play_pause(self):
+    def media_play_pause(self):
         """Send play/pause command."""
-        await self._xboxone.media_command('play_pause')
+        asyncio.run(self._xboxone.media_command('play_pause'))
 
-    async def media_previous_track(self):
+    def media_previous_track(self):
         """Send previous track command."""
         if self._xboxone.active_app == 'TV':
-            self._xboxone.ir_command('stb', 'btn.ch_down')
+            asyncio.run(self._xboxone.ir_command('stb', 'btn.ch_down'))
         else:
-            await self._xboxone.media_command('prev_track')
+            asyncio.run(self._xboxone.media_command('prev_track'))
 
     def media_next_track(self):
         """Send next track command."""
         if self._xboxone.active_app == 'TV':
-            self._xboxone.ir_command('stb', 'btn.ch_up')
+            asyncio.run(self._xboxone.ir_command('stb', 'btn.ch_up'))
         else:
-            self._xboxone.media_command('next_track')
+            asyncio.run(self._xboxone.media_command('next_track'))
 
-    async def select_source(self, source):
+    def select_source(self, source):
         """Select input source."""
-        await self._xboxone.launch_title(source)
+        asyncio.run(self._xboxone.launch_title(source))
