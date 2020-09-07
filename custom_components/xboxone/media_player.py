@@ -69,7 +69,7 @@ async def async_setup_platform(hass, config, add_devices, discovery_info=None):
     proto = 'https' if ssl else 'http'
     base_url = '{0}://{1}:{2}'.format(proto, host, port)
 
-    add_devices([XboxOneDevice(base_url, liveid, ip, name, auth)])
+    add_devices([XboxOneDevice(base_url, liveid, ip, name, auth, hass)])
 
 
 class XboxOne:
@@ -498,18 +498,11 @@ class XboxOne:
             await self._update_media_status()
             await self._update_volume_controls()
 
-def run_async(task):
-    try:
-        loop = asyncio.get_running_loop()
-        return asyncio.run_coroutine_threadsafe(task, loop).result()
-    except RuntimeError:
-        return asyncio.run(task)
-
 
 class XboxOneDevice(MediaPlayerEntity):
     """Representation of an Xbox One device on the network."""
 
-    def __init__(self, base_url, liveid, ip, name, auth):
+    def __init__(self, base_url, liveid, ip, name, auth, hass):
         """Initialize the Xbox One device."""
         self._xboxone = XboxOne(base_url, liveid, ip, auth)
         self._name = name
@@ -517,6 +510,10 @@ class XboxOneDevice(MediaPlayerEntity):
         self._state = STATE_UNKNOWN
         self._running_apps = None
         self._current_app = None
+        self._hass = hass
+
+    def run_async(self, task):
+        return asyncio.run_coroutine_threadsafe(task, self._hass.loop).result()
 
     @property
     def name(self):
@@ -614,7 +611,7 @@ class XboxOneDevice(MediaPlayerEntity):
     @property
     def source_list(self):
         """Return a list of running apps."""
-        return list(run_async(self._xboxone.all_apps).keys())
+        return list(self.run_async(self._xboxone.all_apps).keys())
 
     async def async_update(self):
         """Get the latest date and update device state."""
@@ -622,53 +619,53 @@ class XboxOneDevice(MediaPlayerEntity):
 
     def turn_on(self):
         """Turn on the device."""
-        run_async(self._xboxone.poweron())
+        self.run_async(self._xboxone.poweron())
 
     def turn_off(self):
         """Turn off the device."""
-        run_async(self._xboxone.poweroff())
+        self.run_async(self._xboxone.poweroff())
 
     def mute_volume(self, mute):
         """Mute the volume."""
-        run_async(self._xboxone.volume_command('mute'))
+        self.run_async(self._xboxone.volume_command('mute'))
 
     def volume_up(self):
         """Turn volume up for media player."""
-        run_async(self._xboxone.volume_command('up'))
+        self.run_async(self._xboxone.volume_command('up'))
 
     def volume_down(self):
         """Turn volume down for media player."""
-        run_async(self._xboxone.volume_command('down'))
+        self.run_async(self._xboxone.volume_command('down'))
 
     def media_play(self):
         """Send play command."""
-        run_async(self._xboxone.media_command('play'))
+        self.run_async(self._xboxone.media_command('play'))
 
     def media_pause(self):
         """Send pause command."""
-        run_async(self._xboxone.media_command('pause'))
+        self.run_async(self._xboxone.media_command('pause'))
 
     def media_stop(self):
-        run_async(self._xboxone.media_command('stop'))
+        self.run_async(self._xboxone.media_command('stop'))
 
     def media_play_pause(self):
         """Send play/pause command."""
-        run_async(self._xboxone.media_command('play_pause'))
+        self.run_async(self._xboxone.media_command('play_pause'))
 
     def media_previous_track(self):
         """Send previous track command."""
         if self._xboxone.active_app == 'TV':
-            run_async(self._xboxone.ir_command('stb', 'btn.ch_down'))
+            self.run_async(self._xboxone.ir_command('stb', 'btn.ch_down'))
         else:
-            run_async(self._xboxone.media_command('prev_track'))
+            self.run_async(self._xboxone.media_command('prev_track'))
 
     def media_next_track(self):
         """Send next track command."""
         if self._xboxone.active_app == 'TV':
-            run_async(self._xboxone.ir_command('stb', 'btn.ch_up'))
+            self.run_async(self._xboxone.ir_command('stb', 'btn.ch_up'))
         else:
-            run_async(self._xboxone.media_command('next_track'))
+            self.run_async(self._xboxone.media_command('next_track'))
 
     def select_source(self, source):
         """Select input source."""
-        run_async(self._xboxone.launch_title(source))
+        self.run_async(self._xboxone.launch_title(source))
