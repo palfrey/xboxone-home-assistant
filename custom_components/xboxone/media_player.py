@@ -244,7 +244,7 @@ class XboxOne:
             params = {}
             if not self._auth:
                 params['anonymous'] = True
-            response = await self.get(url, params=params).json()
+            response = (await self.get(url, params=params)).json()
             if not response.get('success'):
                 _LOGGER.error('Failed to connect to console {0}: {1}'.format(self.liveid, str(response)))
                 return False
@@ -326,7 +326,7 @@ class XboxOne:
             params = None
             if self._ip:
                 params = { 'addr': self._ip }
-            response = await self.get(url, params=params).json()
+            response = (await self.get(url, params=params)).json()
             if not response.get('success'):
                 _LOGGER.error('Failed to poweron {0}'.format(self.liveid))
                 return None
@@ -419,7 +419,7 @@ class XboxOne:
             return None
 
         try:
-            response = await self.get(url).json()
+            response = (await self.get(url)).json()
             if not response.get('success'):
                 return None
         except httpx.RequestError:
