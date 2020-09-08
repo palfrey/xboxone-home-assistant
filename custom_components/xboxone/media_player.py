@@ -86,6 +86,7 @@ class XboxOne:
         self._media_status = None
         self._console_status = None
         self._volume_controls = None
+        self._all_apps = {}
         self._pins = None
         self._session = httpx.AsyncClient()
 
@@ -181,7 +182,7 @@ class XboxOne:
             if len(app):
                 return app[0]
 
-    async def all_apps(self):
+    async def _update_all_apps(self):
         apps = {
             'Home': 'ms-xbox-dashboard://home?view=home',
             'TV': 'ms-xbox-livetv://'
@@ -203,7 +204,12 @@ class XboxOne:
             for app in active_titles:
                 if app.get('has_focus') and app.get('name') not in apps.keys():
                     apps[app.get('name')] = app.get('aum')
-        return apps
+
+        self._all_apps = apps
+
+    @property
+    def all_apps(self):
+        return self._all_apps
 
     async def _check_authentication(self):
         try:
@@ -427,7 +433,7 @@ class XboxOne:
 
     async def launch_title(self, launch_uri):
         try:
-            apps = await self.all_apps()
+            apps = self.all_apps
             if launch_uri in apps.keys():
                 launch_uri = apps[launch_uri]
             response = await self.get('/device/<liveid>/launch/{0}'.format(launch_uri)).json()
@@ -491,6 +497,8 @@ class XboxOne:
                     self._connected = False
                 else:
                     self._connected = True
+
+        await self._update_all_apps()
 
         if self.available and self.connected:
             await self._update_console_status()
@@ -610,7 +618,7 @@ class XboxOneDevice(MediaPlayerEntity):
     @property
     def source_list(self):
         """Return a list of running apps."""
-        return list(self.run_async(self._xboxone.all_apps()).keys())
+        return list(self._xboxone.all_apps.keys())
 
     async def async_update(self):
         """Get the latest date and update device state."""
