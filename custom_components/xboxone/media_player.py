@@ -8,52 +8,80 @@ CREDITS:
 - This module is based on media_player.firetv component, initially created by @happyleavesaoc
 - Original code: https://github.com/home-assistant/home-assistant/blob/dev/homeassistant/components/media_player/firetv.py
 """
-import logging
-import httpx
 import asyncio
-import voluptuous as vol
+import logging
 from urllib.parse import urljoin
-from packaging import version
 
-from homeassistant.components.media_player import (
-    MediaPlayerEntity, PLATFORM_SCHEMA)
-
-from homeassistant.components.media_player.const import (
-    SUPPORT_NEXT_TRACK, SUPPORT_PAUSE, SUPPORT_PREVIOUS_TRACK,
-    SUPPORT_SELECT_SOURCE, SUPPORT_TURN_OFF, SUPPORT_TURN_ON,
-    SUPPORT_VOLUME_STEP, SUPPORT_VOLUME_MUTE, SUPPORT_PLAY,
-    MEDIA_TYPE_MUSIC, MEDIA_TYPE_VIDEO, MEDIA_TYPE_TVSHOW, MEDIA_TYPE_CHANNEL)
-from homeassistant.const import (
-    STATE_IDLE, STATE_OFF, STATE_PAUSED, STATE_PLAYING, STATE_UNKNOWN, STATE_ON,
-    CONF_HOST, CONF_PORT, CONF_SSL, CONF_NAME, CONF_DEVICE, CONF_AUTHENTICATION,
-    CONF_IP_ADDRESS)
-import homeassistant.util.dt as dt_util
 import homeassistant.helpers.config_validation as cv
+import homeassistant.util.dt as dt_util
+import httpx
+import voluptuous as vol
+from homeassistant.components.media_player import PLATFORM_SCHEMA, MediaPlayerEntity
+from homeassistant.components.media_player.const import (
+    MEDIA_TYPE_CHANNEL,
+    MEDIA_TYPE_MUSIC,
+    MEDIA_TYPE_TVSHOW,
+    MEDIA_TYPE_VIDEO,
+    SUPPORT_NEXT_TRACK,
+    SUPPORT_PAUSE,
+    SUPPORT_PLAY,
+    SUPPORT_PREVIOUS_TRACK,
+    SUPPORT_SELECT_SOURCE,
+    SUPPORT_TURN_OFF,
+    SUPPORT_TURN_ON,
+    SUPPORT_VOLUME_MUTE,
+    SUPPORT_VOLUME_STEP,
+)
+from homeassistant.const import (
+    CONF_AUTHENTICATION,
+    CONF_DEVICE,
+    CONF_HOST,
+    CONF_IP_ADDRESS,
+    CONF_NAME,
+    CONF_PORT,
+    CONF_SSL,
+    STATE_IDLE,
+    STATE_OFF,
+    STATE_ON,
+    STATE_PAUSED,
+    STATE_PLAYING,
+    STATE_UNKNOWN,
+)
+from packaging import version
 
 _LOGGER = logging.getLogger(__name__)
 
-SUPPORT_XBOXONE = SUPPORT_PAUSE | \
-    SUPPORT_TURN_ON | SUPPORT_TURN_OFF | SUPPORT_PREVIOUS_TRACK | \
-    SUPPORT_NEXT_TRACK | SUPPORT_SELECT_SOURCE | SUPPORT_PLAY | \
-    SUPPORT_VOLUME_STEP | SUPPORT_VOLUME_MUTE
+SUPPORT_XBOXONE = (
+    SUPPORT_PAUSE
+    | SUPPORT_TURN_ON
+    | SUPPORT_TURN_OFF
+    | SUPPORT_PREVIOUS_TRACK
+    | SUPPORT_NEXT_TRACK
+    | SUPPORT_SELECT_SOURCE
+    | SUPPORT_PLAY
+    | SUPPORT_VOLUME_STEP
+    | SUPPORT_VOLUME_MUTE
+)
 
-MIN_REQUIRED_SERVER_VERSION = '1.1.2'
+MIN_REQUIRED_SERVER_VERSION = "1.1.2"
 
 DEFAULT_SSL = False
-DEFAULT_HOST = 'localhost'
-DEFAULT_NAME = 'Xbox One SmartGlass'
+DEFAULT_HOST = "localhost"
+DEFAULT_NAME = "Xbox One SmartGlass"
 DEFAULT_PORT = 5557
 DEFAULT_AUTHENTICATION = True
 
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
-    vol.Required(CONF_DEVICE): cv.string,
-    vol.Optional(CONF_IP_ADDRESS, default=''): cv.string,
-    vol.Optional(CONF_HOST, default=DEFAULT_HOST): cv.string,
-    vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-    vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
-    vol.Optional(CONF_SSL, default=DEFAULT_SSL): cv.boolean,
-    vol.Optional(CONF_AUTHENTICATION, default=DEFAULT_AUTHENTICATION): cv.boolean,
-})
+PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
+    {
+        vol.Required(CONF_DEVICE): cv.string,
+        vol.Optional(CONF_IP_ADDRESS, default=""): cv.string,
+        vol.Optional(CONF_HOST, default=DEFAULT_HOST): cv.string,
+        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+        vol.Optional(CONF_PORT, default=DEFAULT_PORT): cv.port,
+        vol.Optional(CONF_SSL, default=DEFAULT_SSL): cv.boolean,
+        vol.Optional(CONF_AUTHENTICATION, default=DEFAULT_AUTHENTICATION): cv.boolean,
+    }
+)
 
 
 async def async_setup_platform(hass, config, add_devices, discovery_info=None):
@@ -66,8 +94,8 @@ async def async_setup_platform(hass, config, add_devices, discovery_info=None):
     ip = config.get(CONF_IP_ADDRESS)
     auth = config.get(CONF_AUTHENTICATION)
 
-    proto = 'https' if ssl else 'http'
-    base_url = '{0}://{1}:{2}'.format(proto, host, port)
+    proto = "https" if ssl else "http"
+    base_url = "{0}://{1}:{2}".format(proto, host, port)
 
     add_devices([XboxOneDevice(base_url, liveid, ip, name, auth, hass)])
 
@@ -91,7 +119,7 @@ class XboxOne:
         self._session = httpx.AsyncClient()
 
     async def get(self, endpoint, *args, **kwargs):
-        endpoint = endpoint.replace('<liveid>', self.liveid)
+        endpoint = endpoint.replace("<liveid>", self.liveid)
         full_url = urljoin(self.base_url, endpoint)
         return await self._session.get(full_url, *args, **kwargs)
 
@@ -117,30 +145,30 @@ class XboxOne:
         if not volume_controls:
             return None
 
-        controls = volume_controls.get('avr') or volume_controls.get('tv')
+        controls = volume_controls.get("avr") or volume_controls.get("tv")
         if not controls:
             return None
 
         return {
-            'mute': controls['buttons']['btn.vol_mute']['url'],
-            'up': controls['buttons']['btn.vol_up']['url'],
-            'down': controls['buttons']['btn.vol_down']['url'],
+            "mute": controls["buttons"]["btn.vol_mute"]["url"],
+            "up": controls["buttons"]["btn.vol_up"]["url"],
+            "down": controls["buttons"]["btn.vol_down"]["url"],
         }
 
     @property
     def media_playback_state(self):
         if self.media_status:
-            return self.media_status.get('playback_status')
+            return self.media_status.get("playback_status")
 
     @property
     def media_type(self):
         if self.media_status:
-            return self.media_status.get('media_type')
+            return self.media_status.get("media_type")
 
     @property
     def media_position(self):
         if self.media_status:
-            position = self.media_status.get('position')
+            position = self.media_status.get("position")
             # Convert from nanoseconds
             if isinstance(position, int) and position >= 10000000:
                 return position / 10000000
@@ -148,7 +176,7 @@ class XboxOne:
     @property
     def media_duration(self):
         if self.media_status:
-            media_end = self.media_status.get('media_end')
+            media_end = self.media_status.get("media_end")
             # Convert from nanoseconds
             if isinstance(media_end, int) and media_end >= 10000000:
                 return media_end / 10000000
@@ -156,54 +184,56 @@ class XboxOne:
     @property
     def media_title(self):
         if self.media_status:
-            return self.media_status.get('metadata', {}).get('title')
+            return self.media_status.get("metadata", {}).get("title")
 
     @property
     def active_app(self):
         if self.console_status:
-            active_titles = self.console_status.get('active_titles')
-            app = [a.get('name') for a in active_titles if a.get('has_focus')]
+            active_titles = self.console_status.get("active_titles")
+            app = [a.get("name") for a in active_titles if a.get("has_focus")]
             if len(app):
                 return app[0]
 
     @property
     def active_app_image(self):
         if self.console_status:
-            active_titles = self.console_status.get('active_titles')
-            app = [a.get('image') for a in active_titles if a.get('has_focus')]
+            active_titles = self.console_status.get("active_titles")
+            app = [a.get("image") for a in active_titles if a.get("has_focus")]
             if len(app):
                 return app[0] or None
 
     @property
     def active_app_type(self):
         if self.console_status:
-            active_titles = self.console_status.get('active_titles')
-            app = [a.get('type') for a in active_titles if a.get('has_focus')]
+            active_titles = self.console_status.get("active_titles")
+            app = [a.get("type") for a in active_titles if a.get("has_focus")]
             if len(app):
                 return app[0]
 
     async def _update_all_apps(self):
-        apps = {
-            'Home': 'ms-xbox-dashboard://home?view=home',
-            'TV': 'ms-xbox-livetv://'
-        }
+        apps = {"Home": "ms-xbox-dashboard://home?view=home", "TV": "ms-xbox-livetv://"}
 
         if not self._pins and await self._check_authentication():
-            self._pins = (await self.get('/web/pins')).json()
+            self._pins = (await self.get("/web/pins")).json()
 
         if self._pins:
             try:
-                for item in self._pins['ListItems']:
-                    if item['Item']['ContentType'] == 'DApp' and item['Item']['Title'] not in apps.keys():
-                        apps[item['Item']['Title']] = 'appx:{0}!App'.format(item['Item']['ItemId'])
+                for item in self._pins["ListItems"]:
+                    if (
+                        item["Item"]["ContentType"] == "DApp"
+                        and item["Item"]["Title"] not in apps.keys()
+                    ):
+                        apps[item["Item"]["Title"]] = "appx:{0}!App".format(
+                            item["Item"]["ItemId"]
+                        )
             except:
                 pass
 
         if self.console_status:
-            active_titles = self.console_status.get('active_titles')
+            active_titles = self.console_status.get("active_titles")
             for app in active_titles:
-                if app.get('has_focus') and app.get('name') not in apps.keys():
-                    apps[app.get('name')] = app.get('aum')
+                if app.get("has_focus") and app.get("name") not in apps.keys():
+                    apps[app.get("name")] = app.get("aum")
 
         self._all_apps = apps
 
@@ -213,198 +243,216 @@ class XboxOne:
 
     async def _check_authentication(self):
         try:
-            response = (await self.get('/auth')).json()
-            if response.get('authenticated'):
+            response = (await self.get("/auth")).json()
+            if response.get("authenticated"):
                 return True
 
-            response = (await self.get('/auth/refresh')).json()
-            if response.get('success'):
+            response = (await self.get("/auth/refresh")).json()
+            if response.get("success"):
                 return True
 
         except httpx.RequestError:
-            _LOGGER.error('Unreachable /auth endpoint')
+            _LOGGER.error("Unreachable /auth endpoint")
             return False
         except Exception as e:
-            _LOGGER.error('Unknown Error: %s', e)
+            _LOGGER.error("Unknown Error: %s", e)
 
-        _LOGGER.error('Refreshing authentication tokens failed!')
+        _LOGGER.error("Refreshing authentication tokens failed!")
         return False
 
     async def _refresh_devicelist(self):
         params = None
         if self._ip:
-            params = {'addr': self._ip}
-        await self.get('/device', params=params)
+            params = {"addr": self._ip}
+        await self.get("/device", params=params)
 
     async def _connect(self):
         if self._auth and not await self._check_authentication():
             return False
         try:
-            url = '/device/<liveid>/connect'
+            url = "/device/<liveid>/connect"
             params = {}
             if not self._auth:
-                params['anonymous'] = True
+                params["anonymous"] = True
             response = (await self.get(url, params=params)).json()
-            if not response.get('success'):
-                _LOGGER.error('Failed to connect to console {0}: {1}'.format(self.liveid, str(response)))
+            if not response.get("success"):
+                _LOGGER.error(
+                    "Failed to connect to console {0}: {1}".format(
+                        self.liveid, str(response)
+                    )
+                )
                 return False
         except httpx.RequestError:
-            _LOGGER.error('Unreachable /connect endpoint')
+            _LOGGER.error("Unreachable /connect endpoint")
             return False
         except Exception as e:
-            _LOGGER.error('Unknown Error: %s', e)
+            _LOGGER.error("Unknown Error: %s", e)
             return None
 
         return True
 
     async def _get_device_info(self):
         try:
-            response = (await self.get('/device/<liveid>')).json()
-            if not response.get('success'):
-                _LOGGER.debug('Console {0} not available'.format(self.liveid))
+            response = (await self.get("/device/<liveid>")).json()
+            if not response.get("success"):
+                _LOGGER.debug("Console {0} not available".format(self.liveid))
                 return None
         except httpx.RequestError:
-            _LOGGER.error('Unreachable device info /<liveid> endpoint')
+            _LOGGER.error("Unreachable device info /<liveid> endpoint")
             return None
         except Exception as e:
-            _LOGGER.error('Unknown Error: %s', e)
+            _LOGGER.error("Unknown Error: %s", e)
             return None
 
-        return response['device']
+        return response["device"]
 
     async def _update_console_status(self):
         try:
-            response = (await self.get('/device/<liveid>/console_status')).json()
-            if not response.get('success'):
-                _LOGGER.error('Console {0} not available'.format(self.liveid))
+            response = (await self.get("/device/<liveid>/console_status")).json()
+            if not response.get("success"):
+                _LOGGER.error("Console {0} not available".format(self.liveid))
                 return None
         except httpx.RequestError:
-            _LOGGER.error('Unreachable /console_status endpoint')
+            _LOGGER.error("Unreachable /console_status endpoint")
             return None
         except Exception as e:
-            _LOGGER.error('Unknown Error: %s', e)
+            _LOGGER.error("Unknown Error: %s", e)
             return None
 
-        self._console_status = response['console_status']
+        self._console_status = response["console_status"]
 
     async def _update_media_status(self):
         try:
-            response = (await self.get('/device/<liveid>/media_status')).json()
-            if not response.get('success'):
-                _LOGGER.error('Console {0} not available'.format(self.liveid))
+            response = (await self.get("/device/<liveid>/media_status")).json()
+            if not response.get("success"):
+                _LOGGER.error("Console {0} not available".format(self.liveid))
                 return None
         except httpx.RequestError:
-            _LOGGER.error('Unreachable /media_status endpoint')
+            _LOGGER.error("Unreachable /media_status endpoint")
             return None
         except Exception as e:
-            _LOGGER.error('Unknown Error: %s', e)
+            _LOGGER.error("Unknown Error: %s", e)
             return None
 
-        self._media_status = response['media_status']
+        self._media_status = response["media_status"]
 
     async def _update_volume_controls(self):
         if self._volume_controls:
             return
 
         try:
-            response = (await self.get('/device/<liveid>/ir')).json()
-            if not response.get('success'):
-                _LOGGER.error('Console {0} not available'.format(self.liveid))
+            response = (await self.get("/device/<liveid>/ir")).json()
+            if not response.get("success"):
+                _LOGGER.error("Console {0} not available".format(self.liveid))
                 return None
         except httpx.RequestError:
-            _LOGGER.error('Unreachable /ir endpoint')
+            _LOGGER.error("Unreachable /ir endpoint")
             return None
         except Exception as e:
-            _LOGGER.error('Unknown Error: %s', e)
+            _LOGGER.error("Unknown Error: %s", e)
             return None
 
         self._volume_controls = response
 
     async def poweron(self):
         try:
-            url = '/device/<liveid>/poweron'
+            url = "/device/<liveid>/poweron"
             params = None
             if self._ip:
-                params = { 'addr': self._ip }
+                params = {"addr": self._ip}
             response = (await self.get(url, params=params)).json()
-            if not response.get('success'):
-                _LOGGER.error('Failed to poweron {0}'.format(self.liveid))
+            if not response.get("success"):
+                _LOGGER.error("Failed to poweron {0}".format(self.liveid))
                 return None
         except httpx.RequestError:
-            _LOGGER.error('Unreachable /poweron endpoint')
+            _LOGGER.error("Unreachable /poweron endpoint")
             return None
 
         return response
 
     async def poweroff(self):
         try:
-            response = (await self.get('/device/<liveid>/poweroff')).json()
-            if not response.get('success'):
-                _LOGGER.error('Failed to poweroff {0}'.format(self.liveid))
+            response = (await self.get("/device/<liveid>/poweroff")).json()
+            if not response.get("success"):
+                _LOGGER.error("Failed to poweroff {0}".format(self.liveid))
                 return None
         except httpx.RequestError:
-            _LOGGER.error('Failed to call poweroff for {0}'.format(self.liveid))
+            _LOGGER.error("Failed to call poweroff for {0}".format(self.liveid))
             return None
 
         return response
 
     async def ir_command(self, device, command):
         try:
-            response = (await self.get('/device/<liveid>/ir')).json()
-            if not response.get('success'):
+            response = (await self.get("/device/<liveid>/ir")).json()
+            if not response.get("success"):
                 return None
         except httpx.RequestError:
-            _LOGGER.error('Failed to get enabled media commands for {0}'.format(self.liveid))
+            _LOGGER.error(
+                "Failed to get enabled media commands for {0}".format(self.liveid)
+            )
             return None
         except Exception as e:
-            _LOGGER.error('Unknown Error: %s', e)
+            _LOGGER.error("Unknown Error: %s", e)
             return
 
-        enabled_commands = response.get(device).get('buttons')
+        enabled_commands = response.get(device).get("buttons")
         if command not in enabled_commands:
-            _LOGGER.error('Provided command {0} not enabled for current ir device'.format(command))
+            _LOGGER.error(
+                "Provided command {0} not enabled for current ir device".format(command)
+            )
             return None
         else:
-            button_url = enabled_commands.get(command).get('url')
+            button_url = enabled_commands.get(command).get("url")
 
         try:
-            response = await self.get('{0}'.format(button_url)).json()
-            if not response.get('success'):
+            response = await self.get("{0}".format(button_url)).json()
+            if not response.get("success"):
                 return None
         except httpx.RequestError:
-            _LOGGER.error('Failed to get enabled ir commands for {0}'.format(self.liveid))
+            _LOGGER.error(
+                "Failed to get enabled ir commands for {0}".format(self.liveid)
+            )
             return None
         except Exception as e:
-            _LOGGER.error('Unknown Error: %s', e)
+            _LOGGER.error("Unknown Error: %s", e)
 
         return response
 
     async def media_command(self, command):
         try:
-            response = (await self.get('/device/<liveid>/media')).json()
-            if not response.get('success'):
+            response = (await self.get("/device/<liveid>/media")).json()
+            if not response.get("success"):
                 return None
         except httpx.RequestError:
-            _LOGGER.error('Failed to get enabled media commands for {0}'.format(self.liveid))
+            _LOGGER.error(
+                "Failed to get enabled media commands for {0}".format(self.liveid)
+            )
             return None
         except Exception as e:
-            _LOGGER.error('Unknown Error: %s', e)
+            _LOGGER.error("Unknown Error: %s", e)
             return None
 
-        enabled_commands = response.get('commands')
+        enabled_commands = response.get("commands")
         if command not in enabled_commands:
-            _LOGGER.error('Provided command {0} not enabled for current media'.format(command))
+            _LOGGER.error(
+                "Provided command {0} not enabled for current media".format(command)
+            )
             return None
 
         try:
-            response = await self.get('/device/<liveid>/media/{0}'.format(command)).json()
-            if not response.get('success'):
+            response = await self.get(
+                "/device/<liveid>/media/{0}".format(command)
+            ).json()
+            if not response.get("success"):
                 return None
         except httpx.RequestError:
-            _LOGGER.error('Failed to get enabled media commands for {0}'.format(self.liveid))
+            _LOGGER.error(
+                "Failed to get enabled media commands for {0}".format(self.liveid)
+            )
             return None
         except Exception as e:
-            _LOGGER.error('Unknown Error: %s', e)
+            _LOGGER.error("Unknown Error: %s", e)
             return None
 
         return response
@@ -420,13 +468,15 @@ class XboxOne:
 
         try:
             response = (await self.get(url)).json()
-            if not response.get('success'):
+            if not response.get("success"):
                 return None
         except httpx.RequestError:
-            _LOGGER.error('Failed to get enabled volume commands for {0}'.format(self.liveid))
+            _LOGGER.error(
+                "Failed to get enabled volume commands for {0}".format(self.liveid)
+            )
             return None
         except Exception as e:
-            _LOGGER.error('Unknown Error: %s', e)
+            _LOGGER.error("Unknown Error: %s", e)
             return None
 
         return response
@@ -436,14 +486,18 @@ class XboxOne:
             apps = self.all_apps
             if launch_uri in apps.keys():
                 launch_uri = apps[launch_uri]
-            response = await self.get('/device/<liveid>/launch/{0}'.format(launch_uri)).json()
-            if not response.get('success'):
+            response = await self.get(
+                "/device/<liveid>/launch/{0}".format(launch_uri)
+            ).json()
+            if not response.get("success"):
                 return None
         except httpx.RequestError:
-            _LOGGER.error('Failed to launch title \'{0}\' for {1}'.format(launch_uri, self.liveid))
+            _LOGGER.error(
+                "Failed to launch title '{0}' for {1}".format(launch_uri, self.liveid)
+            )
             return None
         except Exception as e:
-            _LOGGER.error('Unknown Error: %s', e)
+            _LOGGER.error("Unknown Error: %s", e)
             return None
 
         return response
@@ -453,12 +507,15 @@ class XboxOne:
             return False
 
         try:
-            resp = (await self.get('/versions')).json()
-            lib_version = resp['versions']['xbox-smartglass-core']
+            resp = (await self.get("/versions")).json()
+            lib_version = resp["versions"]["xbox-smartglass-core"]
             if version.parse(lib_version) < version.parse(MIN_REQUIRED_SERVER_VERSION):
                 self.is_server_correct_version = False
-                _LOGGER.error("Invalid xbox-smartglass-core version: %s. Min Required: %s",
-                              lib_version, MIN_REQUIRED_SERVER_VERSION)
+                _LOGGER.error(
+                    "Invalid xbox-smartglass-core version: %s. Min Required: %s",
+                    lib_version,
+                    MIN_REQUIRED_SERVER_VERSION,
+                )
         except httpx.RequestError:
             self.is_server_up = False
             return False
@@ -478,7 +535,7 @@ class XboxOne:
         await self._refresh_devicelist()
 
         device_info = await self._get_device_info()
-        if not device_info or device_info.get('device_status') == 'Unavailable':
+        if not device_info or device_info.get("device_status") == "Unavailable":
             self._available = False
             self._connected = False
             self._console_status = None
@@ -487,13 +544,13 @@ class XboxOne:
         else:
             self._available = True
 
-            connection_state = device_info.get('connection_state')
-            if connection_state == 'Connected':
+            connection_state = device_info.get("connection_state")
+            if connection_state == "Connected":
                 self._connected = True
             else:
                 success = await self._connect()
                 if not success:
-                    _LOGGER.error('Failed to connect to {0}'.format(self.liveid))
+                    _LOGGER.error("Failed to connect to {0}".format(self.liveid))
                     self._connected = False
                 else:
                     self._connected = True
@@ -520,7 +577,9 @@ class XboxOneDevice(MediaPlayerEntity):
         self._hass = hass
 
     def run_async(self, task):
-        return asyncio.run_coroutine_threadsafe(task, self._hass.loop).result(timeout=60)
+        return asyncio.run_coroutine_threadsafe(task, self._hass.loop).result(
+            timeout=60
+        )
 
     @property
     def name(self):
@@ -541,8 +600,10 @@ class XboxOneDevice(MediaPlayerEntity):
     def supported_features(self):
         """Flag media player features that are supported."""
         active_support = SUPPORT_XBOXONE
-        if self.state not in [STATE_PLAYING, STATE_PAUSED]\
-                and (self._xboxone.active_app_type not in ['Application', 'App'] or self._xboxone.active_app == 'Home'):
+        if self.state not in [STATE_PLAYING, STATE_PAUSED] and (
+            self._xboxone.active_app_type not in ["Application", "App"]
+            or self._xboxone.active_app == "Home"
+        ):
             active_support &= ~SUPPORT_NEXT_TRACK & ~SUPPORT_PREVIOUS_TRACK
         if not self._xboxone.volume_controls:
             active_support &= ~SUPPORT_VOLUME_MUTE & ~SUPPORT_VOLUME_STEP
@@ -552,17 +613,20 @@ class XboxOneDevice(MediaPlayerEntity):
     def state(self):
         """Return the state of the player."""
         playback_state = {
-            'Closed': STATE_IDLE,
-            'Changing': STATE_IDLE,
-            'Stopped': STATE_IDLE,
-            'Playing': STATE_PLAYING,
-            'Paused': STATE_PAUSED
+            "Closed": STATE_IDLE,
+            "Changing": STATE_IDLE,
+            "Stopped": STATE_IDLE,
+            "Playing": STATE_PLAYING,
+            "Paused": STATE_PAUSED,
         }.get(self._xboxone.media_playback_state)
 
         if playback_state:
             state = playback_state
         elif self._xboxone.connected or self._xboxone.available:
-            if self._xboxone.active_app_type in ['Application', 'App', 'Game'] or self._xboxone.active_app == 'Home':
+            if (
+                self._xboxone.active_app_type in ["Application", "App", "Game"]
+                or self._xboxone.active_app == "Home"
+            ):
                 state = STATE_ON
             else:
                 state = STATE_UNKNOWN
@@ -575,10 +639,9 @@ class XboxOneDevice(MediaPlayerEntity):
     def media_content_type(self):
         """Media content type"""
         if self.state in [STATE_PLAYING, STATE_PAUSED]:
-            return {
-                'Music': MEDIA_TYPE_MUSIC,
-                'Video': MEDIA_TYPE_VIDEO
-            }.get(self._xboxone.media_type)
+            return {"Music": MEDIA_TYPE_MUSIC, "Video": MEDIA_TYPE_VIDEO}.get(
+                self._xboxone.media_type
+            )
 
     @property
     def media_duration(self):
@@ -634,44 +697,44 @@ class XboxOneDevice(MediaPlayerEntity):
 
     def mute_volume(self, mute):
         """Mute the volume."""
-        self.run_async(self._xboxone.volume_command('mute'))
+        self.run_async(self._xboxone.volume_command("mute"))
 
     def volume_up(self):
         """Turn volume up for media player."""
-        self.run_async(self._xboxone.volume_command('up'))
+        self.run_async(self._xboxone.volume_command("up"))
 
     def volume_down(self):
         """Turn volume down for media player."""
-        self.run_async(self._xboxone.volume_command('down'))
+        self.run_async(self._xboxone.volume_command("down"))
 
     def media_play(self):
         """Send play command."""
-        self.run_async(self._xboxone.media_command('play'))
+        self.run_async(self._xboxone.media_command("play"))
 
     def media_pause(self):
         """Send pause command."""
-        self.run_async(self._xboxone.media_command('pause'))
+        self.run_async(self._xboxone.media_command("pause"))
 
     def media_stop(self):
-        self.run_async(self._xboxone.media_command('stop'))
+        self.run_async(self._xboxone.media_command("stop"))
 
     def media_play_pause(self):
         """Send play/pause command."""
-        self.run_async(self._xboxone.media_command('play_pause'))
+        self.run_async(self._xboxone.media_command("play_pause"))
 
     def media_previous_track(self):
         """Send previous track command."""
-        if self._xboxone.active_app == 'TV':
-            self.run_async(self._xboxone.ir_command('stb', 'btn.ch_down'))
+        if self._xboxone.active_app == "TV":
+            self.run_async(self._xboxone.ir_command("stb", "btn.ch_down"))
         else:
-            self.run_async(self._xboxone.media_command('prev_track'))
+            self.run_async(self._xboxone.media_command("prev_track"))
 
     def media_next_track(self):
         """Send next track command."""
-        if self._xboxone.active_app == 'TV':
-            self.run_async(self._xboxone.ir_command('stb', 'btn.ch_up'))
+        if self._xboxone.active_app == "TV":
+            self.run_async(self._xboxone.ir_command("stb", "btn.ch_up"))
         else:
-            self.run_async(self._xboxone.media_command('next_track'))
+            self.run_async(self._xboxone.media_command("next_track"))
 
     def select_source(self, source):
         """Select input source."""
