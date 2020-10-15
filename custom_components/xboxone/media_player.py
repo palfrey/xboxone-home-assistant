@@ -9,6 +9,7 @@ CREDITS:
 - Original code: https://github.com/home-assistant/home-assistant/blob/dev/homeassistant/components/media_player/firetv.py
 """
 import asyncio
+import functools
 import logging
 from urllib.parse import urljoin
 

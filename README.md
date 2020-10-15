@@ -10,8 +10,9 @@ This repo includes the custom media player integration and a
 dockerized version of the Xbox One Smartglass REST server to
 use with HASS.io.
 
-## IMPORTANT: You need both, HACS addon and HASS.io ADDDON
-
+## IMPORTANT
+- You need both, HACS addon and HASS.io ADDDON
+- Yes, this addon / plugin currently is in a miserable state. Either fix it yourself and send a Pull Request or wait for the rewrite.
 
 ## General
 
